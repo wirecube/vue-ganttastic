@@ -9,7 +9,7 @@ A simple and easy-to-use Gantt chart component for Vue.js
 ## Installation
 You can install and use Vue-Ganttastic in your project using <kbd>npm</kbd>:
 ```
-npm install vue-ganttastic
+npm install wirecube/vue-ganttastic
 ```
 
 [Moment.js](https://momentjs.com/) is a peer-dependency of Vue-Ganttastic. In order for Vue-Ganttastic to work correctly, you need to install it in your project:

@@ -163,7 +163,7 @@ export default {
   #g-timeaxis > .g-timeaxis-days {
     position: relative;
     width: 80%;
-    height: 100%,
+    height: 100%;
   }
 
   .g-timeaxis-day {
