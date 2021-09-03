@@ -102,8 +102,8 @@ export default {
     window.addEventListener("resize", this.onWindowResize)
   },
 
-  beforeUnmount() {
-    window.removeEventListener("resize", this.onWindowResize)
+  destroyed() {
+    window.removeEventListener("resize", this.onWindowResize);
   },
 
   methods:{
@@ -141,7 +141,9 @@ export default {
 
     onWindowResize(){
       // re-initialize the barContainer DOMRect variable, which will trigger re-rendering in the gantt bars
-      this.barContainer = this.$refs.barContainer.getBoundingClientRect() 
+      if(this.$refs.barContainer) {
+        this.barContainer = this.$refs.barContainer.getBoundingClientRect();
+      }
     }
   },
 
