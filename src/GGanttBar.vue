@@ -111,6 +111,7 @@ export default {
       if(this.bar.ganttBarConfig) {
         return {
           ...this.bar.ganttBarConfig,
+          height: this.bar.ganttBarConfig.height || this.ganttChartProps.rowHeight,
           background: this.bar.ganttBarConfig.isShadow ? "grey" : this.bar.ganttBarConfig.background || this.bar.ganttBarConfig.backgroundColor,
           opacity: this.bar.ganttBarConfig.isShadow ? "0.3" : this.bar.ganttBarConfig.opacity
         }
@@ -121,11 +122,26 @@ export default {
     barStyle(){ 
       let xStart = this.mapTimeToPosition(this.barStartMoment)
       let xEnd = this.mapTimeToPosition(this.barEndMoment)
+
+      const overlaps = this.getOverlapBars(this.bar);
+      const offset = 2;
+      const height = `${(this.barConfig.height - 2*offset) / (overlaps.length + 1)}`;
+
+      // sort affected bars by start
+      const conflictingBars = [this.bar, ...overlaps.map(o => o.overlapBar)].sort((a,b)=> {
+        return this.mapTimeToPosition(a.from) - this.mapTimeToPosition(b.from)
+      });
+      const idx = conflictingBars.findIndex((bar) => bar === this.bar);
+
+      const top = offset + height * idx;
+
       return {
         ...(this.barConfig || {}),
         left: `${xStart}px`,
         width: `${xEnd - xStart}px`,
-        height: `${this.ganttChartProps.rowHeight - 6}px`,
+        height:  `${height}px`,
+        top: `${top}px`,
+        maxHeight: `100%`,
         zIndex: this.barConfig.zIndex || (this.isDragging ? 2 : 1)
       }
     },
@@ -268,10 +284,7 @@ export default {
       if(xStart && this.dragLimitLeft !== null && xStart < this.dragLimitLeft + this.getMinGapBetweenBars()){
         return true
       }
-      if(xEnd && this.dragLimitRight !== null && xEnd > this.dragLimitRight - this.getMinGapBetweenBars()){
-        return true
-      }
-      return false
+      return xEnd && this.dragLimitRight !== null && xEnd > this.dragLimitRight - this.getMinGapBetweenBars();
     },
 
     endDrag(e){
@@ -293,57 +306,59 @@ export default {
     },
 
     manageOverlapping(){
-      if(!this.ganttChartProps.pushOnOverlap || this.barConfig.pushOnOverlap === false){
-        return
-      }
       let currentBar = this.bar
-      let {overlapBar, overlapType} = this.getOverlapBarAndType(currentBar)
-      while(overlapBar){
-        let minuteDiff
-        let currentStartMoment = moment(currentBar[this.barStart])
-        let currentEndMoment = moment(currentBar[this.barEnd])
-        let overlapStartMoment = moment(overlapBar[this.barStart])
-        let overlapEndMoment  = moment(overlapBar[this.barEnd])
-        switch(overlapType){
-          case "left":
-            minuteDiff = overlapEndMoment.diff(currentStartMoment, "minutes", true) + this.getMinGapBetweenBars()
-            overlapBar[this.barEnd] = currentStartMoment.subtract(this.getMinGapBetweenBars(), "minutes", true).format("YYYY-MM-DD HH:mm:ss")
-            overlapBar[this.barStart] = overlapStartMoment.subtract(minuteDiff, "minutes", true).format("YYYY-MM-DD HH:mm:ss")
-            break
-          case "right":
-            minuteDiff = currentEndMoment.diff(overlapStartMoment, "minutes", true) + this.getMinGapBetweenBars()
-            overlapBar[this.barStart] = currentEndMoment.add(this.getMinGapBetweenBars(), "minutes", true).format("YYYY-MM-DD HH:mm:ss")
-            overlapBar[this.barEnd] = overlapEndMoment.add(minuteDiff, "minutes", true).format("YYYY-MM-DD HH:mm:ss")
-            break
-          default:
-            // eslint-disable-next-line
-            console.warn("One bar is inside of the other one! This should never occur while push-on-overlap is active!")
-            return
+      let overlaps = this.getOverlapBars(currentBar)
+
+      if(this.ganttChartProps.pushOnOverlap || this.barConfig.pushOnOverlap === true){
+        for(const {overlapBar, overlapType} of overlaps){
+          let minuteDiff
+          let currentStartMoment = moment(currentBar[this.barStart])
+          let currentEndMoment = moment(currentBar[this.barEnd])
+          let overlapStartMoment = moment(overlapBar[this.barStart])
+          let overlapEndMoment  = moment(overlapBar[this.barEnd])
+
+          switch(overlapType){
+            case "left":
+              minuteDiff = overlapEndMoment.diff(currentStartMoment, "minutes", true) + this.getMinGapBetweenBars()
+              overlapBar[this.barEnd] = currentStartMoment.subtract(this.getMinGapBetweenBars(), "minutes", true).format("YYYY-MM-DD HH:mm:ss")
+              overlapBar[this.barStart] = overlapStartMoment.subtract(minuteDiff, "minutes", true).format("YYYY-MM-DD HH:mm:ss")
+              break
+            case "right":
+              minuteDiff = currentEndMoment.diff(overlapStartMoment, "minutes", true) + this.getMinGapBetweenBars()
+              overlapBar[this.barStart] = currentEndMoment.add(this.getMinGapBetweenBars(), "minutes", true).format("YYYY-MM-DD HH:mm:ss")
+              overlapBar[this.barEnd] = overlapEndMoment.add(minuteDiff, "minutes", true).format("YYYY-MM-DD HH:mm:ss")
+              break
+            default:
+              // eslint-disable-next-line
+              console.warn("One bar is inside of the other one! This should never occur while push-on-overlap is active!")
+              return
+          }
+          this.moveBarsFromBundleOfPushedBar(overlapBar, minuteDiff, overlapType)
         }
-        this.moveBarsFromBundleOfPushedBar(overlapBar, minuteDiff, overlapType)
-        currentBar = overlapBar;
-        ({overlapBar, overlapType} = this.getOverlapBarAndType(overlapBar))
       }
     },
 
-    getOverlapBarAndType(bar){
+    getOverlapBars(bar){
       let barStartMoment = moment(bar[this.barStart])
       let barEndMoment = moment(bar[this.barEnd])
-      let overlapLeft, overlapRight, overlapInBetween
-      let overlapBar = this.allBarsInRow.find(otherBar => {
-        if(otherBar === bar || otherBar.ganttBarConfig.pushOnOverlap === false){
-          return false
+
+
+      return this.allBarsInRow.map(otherBar => {
+        if(otherBar === bar){
+          return;
         }
-        let otherBarStart = moment(otherBar[this.barStart])
-        let otherBarEnd = moment(otherBar[this.barEnd])
-        overlapLeft = barStartMoment.isBetween(otherBarStart, otherBarEnd) 
-        overlapRight = barEndMoment.isBetween(otherBarStart, otherBarEnd)
-        overlapInBetween = otherBarStart.isBetween(barStartMoment, barEndMoment)
+        const otherBarStart = moment(otherBar[this.barStart])
+        const otherBarEnd = moment(otherBar[this.barEnd])
+        const isOverlapLeft = barStartMoment.isBetween(otherBarStart, otherBarEnd)
+        const isOverlapRight = barEndMoment.isBetween(otherBarStart, otherBarEnd)
+        const isOverlapInBetween = otherBarStart.isBetween(barStartMoment, barEndMoment)
                           || otherBarEnd.isBetween(barStartMoment, barEndMoment)
-        return overlapLeft || overlapRight || overlapInBetween
-      })
-      let overlapType = overlapLeft ? "left" : (overlapRight ? "right" : (overlapInBetween ? "between" : null))
-      return {overlapBar, overlapType}
+
+        if(isOverlapLeft || isOverlapRight || isOverlapInBetween) {
+          const overlapType = isOverlapLeft && "left"  || isOverlapRight && "right" || isOverlapInBetween && "between" || null;
+          return { overlapBar: otherBar, overlapType: overlapType }
+        }
+      }).filter((overlap) => overlap && !!overlap.overlapBar);
     },
 
     // this is used in GGanttChart, when a bar from a bundle is pushed
