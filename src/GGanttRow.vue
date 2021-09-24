@@ -2,7 +2,7 @@
   <div
     class="g-gantt-row"
     ref="g-gantt-row"
-    :style="{height: `${$parent.rowHeight}px`}"
+    :style="rowStyle"
     v-on="$listeners"
   >
     <div 
@@ -90,8 +90,15 @@ export default {
     },
 
     barsContainerStyle(){
-      return{
+      return {
         width: `${100 - this.ganttChartProps.rowLabelWidth.replace('%','')}%`,
+      }
+    },
+
+    rowStyle(){
+      const groupCount = [... new Set(this.bars.map(b=> b.group))].length;
+      return {
+        height: `${this.$parent.rowHeight * Math.max(groupCount, 1)}px`,
       }
     },
 

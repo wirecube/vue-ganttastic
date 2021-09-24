@@ -123,17 +123,15 @@ export default {
       let xStart = this.mapTimeToPosition(this.barStartMoment)
       let xEnd = this.mapTimeToPosition(this.barEndMoment)
 
-      const overlaps = this.getOverlapBars(this.bar);
+      // all distinct groups
+      const groups = [...new Set(this.allBarsInRow.map(b => b.group))];
+      const groupIdx = groups.findIndex((group) => group === this.bar.group);
+
       const offset = 2;
-      const height = `${(this.barConfig.height - 2*offset) / (overlaps.length + 1)}`;
+      const height = this.barConfig.height - 2*offset;
 
-      // sort affected bars by start
-      const conflictingBars = [this.bar, ...overlaps.map(o => o.overlapBar)].sort((a,b)=> {
-        return this.mapTimeToPosition(a.from) - this.mapTimeToPosition(b.from)
-      });
-      const idx = conflictingBars.findIndex((bar) => bar === this.bar);
-
-      const top = offset + height * idx;
+      // offset per group
+      const top = offset + height * groupIdx;
 
       return {
         ...(this.barConfig || {}),
@@ -344,7 +342,7 @@ export default {
 
 
       return this.allBarsInRow.map(otherBar => {
-        if(otherBar === bar){
+        if(otherBar === bar || otherBar.group !== bar.group){
           return;
         }
         const otherBarStart = moment(otherBar[this.barStart])
