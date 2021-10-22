@@ -99,7 +99,7 @@ export default {
 ```
 
 ## Contributing
-Pull requests are warmly welcomed, while every major change or proposal ought to be discussed in an issue first. As the project is still new, I will gladly accept suggestions, proposals, contributions etc.
+Pull requests are warmly welcomed, while every major change or proposal ought to be discussed in an issue first.
 
 ### Contributing - How to run the project
   1. Clone the project

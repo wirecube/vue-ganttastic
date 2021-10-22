@@ -1,13 +1,16 @@
 {
   "name": "@wirecube/vue-ganttastic",
-  "version": "0.9.35",
+  "version": "0.10.0",
   "description": "A simple and customizable Gantt chart component for Vue.js",
-  "repository": "github:wirecube/vue-ganttastic.git",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wirecube/vue-ganttastic.git"
+  },
   "main": "./dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "bili --bundle-node-modules",
-    "publish": "bili --bundle-node-modules && npm publish"
+    "publishPackage": "bili --bundle-node-modules && npm publish --access public"
   },
   "files": [
     "dist/*"
@@ -34,7 +37,8 @@
   "dependencies": {
     "vue": "^2.6.14"
   },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
-  }
+  "bugs": {
+    "url": "https://github.com/wirecube/vue-ganttastic/issues"
+  },
+  "homepage": "https://github.com/wirecube/vue-ganttastic#readme"
 }
