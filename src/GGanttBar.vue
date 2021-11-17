@@ -1,7 +1,7 @@
 <template>
   <div>
     <div 
-      class="g-gantt-bar" 
+      :class="barClasses"
       ref="g-gantt-bar"
       :style="barStyle"
       @mouseenter.stop="onMouseenter($event)"
@@ -119,6 +119,9 @@ export default {
       return {}
     },
 
+    barClasses() {
+      return ['g-gantt-bar', ...this.barConfig.classes];
+    },
     barStyle(){ 
       let xStart = this.mapTimeToPosition(this.barStartMoment)
       let xEnd = this.mapTimeToPosition(this.barEndMoment)
