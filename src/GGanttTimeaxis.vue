@@ -36,8 +36,6 @@
       </div>
 
     </div>
-    <div id="g-timeaxis-marker"/>
-    
   </div>
 </template>
 
@@ -61,19 +59,15 @@ export default {
     return {
       axisDays: [],
       hourCount: null,
-      timemarker: null,
       hourFontSize: "11px",
       dayFormat: "dddd, DD. MMMM"
     }
   },
 
   mounted(){
-    this.timemarker = document.querySelector("#g-timeaxis-marker")
     this.initAxisDaysAndHours()
     this.onWindowResize()
     window.addEventListener('resize', this.onWindowResize)
-    window.addEventListener("mousemove", (event) => this.moveTimemarker(event))
-    window.addEventListener("dragover", (event) => this.moveTimemarker(event))
   },
 
   methods: {
@@ -84,7 +78,7 @@ export default {
       let end = moment(this.chartEnd)
       this.hourCount = Math.floor(end.diff(start, "hour", true))
       while(start.isBefore(end)){
-        let hourCountOfDay = start.format("DD.MM.YYYY")==end.format("DD.MM.YYYY") ? end.hour() : 24-start.hour()
+        let hourCountOfDay = start.format("DD.MM.YYYY") === end.format("DD.MM.YYYY") ? end.hour() : 24-start.hour()
         let widthPercentage = hourCountOfDay/this.hourCount*100
         let endHour = start.day()===end.day() ? end.hour()-1 : 23   // -1 because the last hour is not included e.g if chartEnd=04:00 the last interval we display is between 03 and 04
         this.axisDays.push(this.getAxisDayObject(start, widthPercentage, endHour))
@@ -111,12 +105,12 @@ export default {
       return axisDayObject
     },
 
-    moveTimemarker(event){
-      this.timemarker.style.left = (event.clientX - this.timemarkerOffset - this.horizontalAxisContainer.left)+"px"
-    },
-
     onWindowResize(){
-      this.horizontalAxisContainer = document.querySelector("#g-timeaxis").getBoundingClientRect()
+      const timeAxis = document.querySelector("#g-timeaxis");
+      if(!timeAxis) {
+        return;
+      }
+      this.horizontalAxisContainer = timeAxis.getBoundingClientRect()
       this.hourFontSize = Math.min(9.5, 0.75*(this.horizontalAxisContainer.width/this.hourCount))+"px"
     },
 
@@ -148,10 +142,9 @@ export default {
     top:0;
     width: 100%;
     height: 8%;
-    min-height: 75px;
-    background: white;
+    min-height: 32px;
+    background: rgba(0, 0, 0, 0.04);
     z-index: 4;
-    box-shadow: 0px 1px 3px 2px rgba(50,50,50, 0.5);
   }
 
   #g-timeaxis > .g-timeaxis-empty-space {
@@ -177,10 +170,7 @@ export default {
   }
 
   .g-timeaxis-day > div:nth-child(1) { /* day text */
-    height: 50%;
-    justify-content: space-around;
-    font-weight: bold;
-    align-items: center;
+    display: none;
   }
 
   .g-timeaxis-day > div:nth-child(2) { /* hours of a day */
